@@ -1,0 +1,10 @@
+<h1>Letters</h1>
+<ul>
+    {% for info in obj_list %}
+        <li>
+            <div><a href="{% url 'word-list' chr=info.id %}">{{ info.chr }}</a></div>
+        </li>
+    {% empty %}
+        <li>No articles yet.</li> 
+    {% endfor %}
+</ul>
