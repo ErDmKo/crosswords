@@ -1,4 +1,6 @@
 from django.db import models
+import re
+from random import choice
 
 class RandomManager(models.Manager):
 
@@ -8,25 +10,161 @@ class RandomManager(models.Manager):
             select * from {} TABLESAMPLE BERNOULLI ((%s * 100) / %s::decimal)
         """.format(self.model._meta.db_table), [limit, count])
 
-    def setItem(self, field, y, x, val):
+    def _getEnds(self, x, y, lenWord, direction):
+        if direction == '-':
+            end =  [[x - 1, y], [x + lenWord, y]]
+        else:
+            end =  [[x, y - 1], [x, y + lenWord]]
+        return end
+
+    def _getWordStart(self, chrNo, xChr, yChr, direction):
+        if direction == '-':
+            x = xChr - chrNo
+            y = yChr
+        else:
+            x = xChr
+            y = yChr - chrNo
+        return [x, y]
+
+    def _sigToDict(self, word, chrNo, xChr, yChr, direction):
+        if direction == '-':
+            xDelta = 1
+            yDelta = 0
+            writeDir = "|"
+        else:
+            xDelta = 0
+            yDelta = 1
+            writeDir = "-"
+        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        for index, letter in enumerate(word):
+            for cell in [1, 0, -1]:
+                writeState = writeDir
+                xIndex = x + (index * xDelta) + (cell * yDelta)
+                yIndex = y + (index * yDelta) + (cell * xDelta)
+                yield [letter, xIndex, yIndex, writeState, cell]
+
+    def checkWord(self, word, chrNo, xChr, yChr, direction):
+        score = 0
+        gen = self._sigToDict(word, chrNo, xChr, yChr, direction)
+        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        end = self._getEnds(x, y, len(word), direction)
+        for [letter, xIndex, yIndex, writeState, cell] in gen:
+            [val, cellDir] = self.getItem(yIndex, xIndex)
+            if cell == 0:
+                if val.upper() == letter.upper():
+                    score += 1
+                if val.upper() != letter.upper() and val != ' ':
+                    return [False, 'l']
+                if cellDir != ' ' and cellDir != direction:
+                    return [False, 'w{}{}'.format(cellDir, val)]
+
+        for [x, y] in end:
+            [val, cellDir] = self.getItem(y, x)
+            if val != ' ':
+                return [False, 'e']
+
+        return [True, score]
+
+    def setWord(self, word, chrNo, xChr, yChr, direction):
+        gen = self._sigToDict(word, chrNo, xChr, yChr, direction)
+        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        end = self._getEnds(x, y, len(word), direction)
+        for [letter, xIndex, yIndex, writeState, cell] in gen:
+            if cell == 0:
+                insertLetter = letter
+            else:
+                [val, cellDir] = self.getItem(yIndex, xIndex)
+                if cellDir != ' ':
+                    writeState = 'X'
+                insertLetter = '{}'.format(val)
+            self.setItem(
+                yIndex,
+                xIndex,
+                '{}{}'.format(insertLetter, writeState)
+            )
+
+        for [y, x] in end:
+            self.setItem(x, y, 'XX')
+
+    def getItem(self, y, x):
+        try:
+            if len(self.field) <= y or len(self.field[y]) <= x:
+                return [' ', ' ']
+            return list(self.field[y][x])[1:3]
+        except:
+            print (len(self.field), len(self.field[len(self.field)-1]), x,y)
+            return [' ', ' ']
+
+    def setItem(self, y, x, val):
         for i in range(y + 1):
-            if len(field) <= i:
-                field.append([])
+            if len(self.field) <= i:
+                self.field.append([])
             for j in range(x + 1):
-                if len(field[i]) <= j:
-                    field[i].append('|  ')
+                if len(self.field[i]) <= j:
+                    self.field[i].append('|  ')
                 if j == x and i == y:
-                    field[y][x] = '|{}'.format(val)
-                if j == x and j == len(field[i]) - 1:
-                    field[i][j] += '|'
-                    
+                    self.field[y][x] = '|{}'.format(val)
+                if j == x and j == len(self.field[i]) - 1:
+                    self.field[i][j] += '|'
+
+    def wordsToField(self, wordList, startX, startY):
+        i = 0
+        insertedList = []
+        while len(wordList):
+            scoreList = []
+            hCount = 0
+            vCount = 0
+            word = choice(wordList)
+            wordList.remove(word)
+            if i == 0:
+                data = [word, 0, startX, startY, '-']
+                self.setWord(*data)
+                insertedList.append(data)
+            else:
+                for [inserted, chrNo, xChr, yChr, direction] in insertedList:
+                    intersect = set(word.upper()) & set(inserted.upper())
+                    if direction == '-':
+                        hCount += 1
+                    else:
+                        vCount += 1
+                    for letter in intersect:
+                        for w in re.finditer(letter, word.upper()):
+                            for x in re.finditer(letter, inserted.upper()):
+                                wIndex = w.start()
+                                iIndex = x.start()
+                                [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+                                newDir = direction == '-' and '|' or '-'
+                                if direction == '-':
+                                    x += iIndex
+                                else:
+                                    y += iIndex
+                                data = [word, wIndex, x, y, newDir]
+                                [isPlacablle, score] = self.checkWord(*data)
+                                if isPlacablle:
+                                    scoreList.append([data, score])
+                if len(scoreList):
+                    for scoreInfo in scoreList:
+                        [info, score] = scoreInfo
+                        if hCount > vCount and info[4] == '-' or \
+                            vCount > hCount and info[4] != '-':
+                            scoreInfo[1] -= .5
+
+                    sortedScore = sorted(scoreList, key=lambda s: s[1], reverse=True)
+                    filtredScore = filter(lambda s: s[1] == sortedScore[0][1], sortedScore)
+                    [data, score] = choice(list(filtredScore))
+                    print(data, score)
+                    self.setWord(*data)
+                    insertedList.append(data)
+            i += 1
 
     def grid(self):
-        field = [[]]
-        self.setItem(field, 10, 9, '  ')
-        for index, letter in enumerate('Инея'):
-            self.setItem(field, 5, 3+index, '{}+'.format(letter))
-        for y in field:
+        self.field = [[]]
+        words = [word.word for word in self.random(10)]
+        self.setItem(50, 50, '  ')
+        # words = ['Mathematica'] * 4
+        print(words)
+        self.wordsToField(words, 20, 30)
+        for y in self.field:
             print('\n', end='')
             for x in y:
                 print(x, end='')
