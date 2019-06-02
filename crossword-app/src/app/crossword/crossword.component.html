@@ -1,0 +1,26 @@
+<ul class="wrapper">
+    <li class="row" *ngFor="let row of grid">
+        <div 
+            class="cell"
+            [ngClass]="{
+                'active': cell.words,
+                'focus': cell.focus,
+                'selected': cell.selected
+            }"
+            *ngFor="let cell of row">
+            <input 
+                *ngIf="cell.words"
+                class="input"
+                [appSetFocus] = "cell.focus"
+                (focus)="focus(cell)"
+                (input)="onInput($event, cell)"
+                type="text"
+            />
+            <div 
+                class="quIndex"
+                *ngIf="cell.index">
+                {{ cell.index }}
+            </div>
+        </div>
+    </li>
+</ul>

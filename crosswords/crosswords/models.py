@@ -17,7 +17,7 @@ class RandomManager(models.Manager):
             end =  [[x, y - 1], [x, y + lenWord]]
         return end
 
-    def _getWordStart(self, chrNo, xChr, yChr, direction):
+    def getWordStart(self, chrNo, xChr, yChr, direction):
         if direction == '-':
             x = xChr - chrNo
             y = yChr
@@ -35,7 +35,7 @@ class RandomManager(models.Manager):
             xDelta = 0
             yDelta = 1
             writeDir = "-"
-        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        [x, y] = self.getWordStart(chrNo, xChr, yChr, direction)
         for index, letter in enumerate(word):
             for cell in [1, 0, -1]:
                 writeState = writeDir
@@ -46,7 +46,7 @@ class RandomManager(models.Manager):
     def checkWord(self, word, chrNo, xChr, yChr, direction):
         score = 0
         gen = self._sigToDict(word, chrNo, xChr, yChr, direction)
-        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        [x, y] = self.getWordStart(chrNo, xChr, yChr, direction)
         end = self._getEnds(x, y, len(word), direction)
         for [letter, xIndex, yIndex, writeState, cell] in gen:
             [val, cellDir] = self.getItem(yIndex, xIndex)
@@ -67,7 +67,7 @@ class RandomManager(models.Manager):
 
     def setWord(self, word, chrNo, xChr, yChr, direction):
         gen = self._sigToDict(word, chrNo, xChr, yChr, direction)
-        [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+        [x, y] = self.getWordStart(chrNo, xChr, yChr, direction)
         end = self._getEnds(x, y, len(word), direction)
         for [letter, xIndex, yIndex, writeState, cell] in gen:
             if cell == 0:
@@ -92,7 +92,7 @@ class RandomManager(models.Manager):
                 return [' ', ' ']
             return list(self.field[y][x])[1:3]
         except:
-            print (len(self.field), len(self.field[len(self.field)-1]), x,y)
+            # print (len(self.field), len(self.field[len(self.field)-1]), x,y)
             return [' ', ' ']
 
     def setItem(self, y, x, val):
@@ -114,14 +114,14 @@ class RandomManager(models.Manager):
             scoreList = []
             hCount = 0
             vCount = 0
-            word = choice(wordList)
-            wordList.remove(word)
+            (word, pk) = choice(wordList)
+            wordList.remove((word, pk))
             if i == 0:
-                data = [word, 0, startX, startY, '-']
-                self.setWord(*data)
+                data = [word, 0, startX, startY, '-', pk]
+                self.setWord(*data[0:5])
                 insertedList.append(data)
             else:
-                for [inserted, chrNo, xChr, yChr, direction] in insertedList:
+                for [inserted, chrNo, xChr, yChr, direction, *rest] in insertedList:
                     intersect = set(word.upper()) & set(inserted.upper())
                     if direction == '-':
                         hCount += 1
@@ -132,14 +132,14 @@ class RandomManager(models.Manager):
                             for x in re.finditer(letter, inserted.upper()):
                                 wIndex = w.start()
                                 iIndex = x.start()
-                                [x, y] = self._getWordStart(chrNo, xChr, yChr, direction)
+                                [x, y] = self.getWordStart(chrNo, xChr, yChr, direction)
                                 newDir = direction == '-' and '|' or '-'
                                 if direction == '-':
                                     x += iIndex
                                 else:
                                     y += iIndex
-                                data = [word, wIndex, x, y, newDir]
-                                [isPlacablle, score] = self.checkWord(*data)
+                                data = [word, wIndex, x, y, newDir, pk]
+                                [isPlacablle, score] = self.checkWord(*data[0:5])
                                 if isPlacablle:
                                     scoreList.append([data, score])
                 if len(scoreList):
@@ -152,22 +152,26 @@ class RandomManager(models.Manager):
                     sortedScore = sorted(scoreList, key=lambda s: s[1], reverse=True)
                     filtredScore = filter(lambda s: s[1] == sortedScore[0][1], sortedScore)
                     [data, score] = choice(list(filtredScore))
-                    print(data, score)
-                    self.setWord(*data)
+                    # print(data, score)
+                    self.setWord(*data[0:5])
                     insertedList.append(data)
             i += 1
+        return insertedList
 
-    def grid(self):
+    def grid(self, silent=False):
         self.field = [[]]
-        words = [word.word for word in self.random(10)]
-        self.setItem(50, 50, '  ')
-        # words = ['Mathematica'] * 4
-        print(words)
-        self.wordsToField(words, 20, 30)
-        for y in self.field:
-            print('\n', end='')
-            for x in y:
-                print(x, end='')
+        words = [(word.word, word.id) \
+                for word in self.random(10)]
+        # words = [('Дима', 1), ('Инея', 2)]
+        self.setItem(100, 100, '  ')
+        out = self.wordsToField(words, 30, 30)
+        if not silent:
+            for y in self.field:
+                print('\n', end='')
+                for x in y:
+                    print(x, end='')
+        print()
+        return out
 
 class Word(models.Model):
     word = models.TextField(
@@ -188,3 +192,6 @@ class Word(models.Model):
 
     def __str__(self):
         return self.word
+
+    class Meta:
+        ordering = ['-id']

@@ -1,0 +1,20 @@
+{
+  "name": "crosswords",
+  "version": "1.0.0",
+  "description": "Some try to make crossword game based on explanatory dict",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ErDmKo/crosswords.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ErDmKo/crosswords/issues"
+  },
+  "homepage": "https://github.com/ErDmKo/crosswords#readme",
+  "dependencies": {}
+}
