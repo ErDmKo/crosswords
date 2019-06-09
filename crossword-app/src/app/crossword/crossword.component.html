@@ -11,16 +11,30 @@
             <input 
                 *ngIf="cell.words"
                 class="input"
-                [appSetFocus] = "cell.focus"
-                (focus)="focus(cell)"
+                [(ngModel)]="cell.val"
+                [appSetFocus]="cell.focus"
+                (focus)="onFocus(cell)"
+                (blur)="onBlur(cell)"
+                (click)="onClick(cell)"
+                (keyup)="onUp($event, cell)"
                 (input)="onInput($event, cell)"
                 type="text"
             />
             <div 
                 class="quIndex"
                 *ngIf="cell.index">
-                {{ cell.index }}
+                <span>{{ cell.index }}</span>
             </div>
         </div>
     </li>
 </ul>
+<div
+    class="desc"
+    *ngIf="selectedWord">
+    <div
+        [innerText]="selectedWord.word.description">
+    </div>
+</div>
+<div *ngIf="answer.valid">
+    Все верно
+</div>

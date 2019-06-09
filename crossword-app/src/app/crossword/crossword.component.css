@@ -16,6 +16,10 @@
 }
 .row {
     background: black;
+    text-align: center;
+}
+.focus .input {
+    background-color: #fcc;
 }
 .cell.selected {
     border-color: blue;
@@ -25,6 +29,7 @@
 }
 .quIndex {
     position: absolute;
+    pointer-events: none;
     font-size: 10px;
     left: 2px;
     top: 2px;

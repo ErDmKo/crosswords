@@ -4,7 +4,8 @@ import {
     ElementRef,
     Renderer,
     OnChanges,
-    SimpleChanges
+    SimpleChanges,
+    ChangeDetectorRef
 } from '@angular/core';
 
 @Directive({
@@ -15,12 +16,18 @@ export class SetFocusDirective implements OnChanges {
 
     constructor(
         private hostElement: ElementRef,
-        private renderer: Renderer
+        private renderer: Renderer,
+        private cdRef:ChangeDetectorRef
     ) { }
 
     ngOnChanges(changes: SimpleChanges) {
         if (this.isFocused) {
-            this.renderer.invokeElementMethod(this.hostElement.nativeElement, 'focus');
+            this.renderer
+                .invokeElementMethod(
+                    this.hostElement.nativeElement,
+                    'focus'
+                );
+            this.cdRef.detectChanges();
         }
     }
 }

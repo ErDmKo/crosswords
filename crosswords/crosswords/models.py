@@ -158,10 +158,10 @@ class RandomManager(models.Manager):
             i += 1
         return insertedList
 
-    def grid(self, silent=False):
+    def grid(self, silent=False, size=10):
         self.field = [[]]
         words = [(word.word, word.id) \
-                for word in self.random(10)]
+                for word in self.random(size)]
         # words = [('Дима', 1), ('Инея', 2)]
         self.setItem(100, 100, '  ')
         out = self.wordsToField(words, 30, 30)

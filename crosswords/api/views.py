@@ -3,6 +3,7 @@ from rest_framework import serializers
 from crosswords.models import Word
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import urllib
 
 class WordSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,22 +12,54 @@ class WordSerializer(serializers.ModelSerializer):
             'word',
             'description',
         )
-
 class CrossSerializer(serializers.Serializer):
     pk = serializers.IntegerField()
     word = serializers.IntegerField()
     x = serializers.IntegerField()
     y = serializers.IntegerField()
     direction = serializers.CharField()
+    description = serializers.CharField()
+    # answer = serializers.CharField()
+
+class RespSerializer(serializers.Serializer):
+    words = CrossSerializer(many=True, read_only=True)
+    answer = serializers.CharField()
 
 class WordList(viewsets.ReadOnlyModelViewSet):
     queryset = Word.objects.all()
     serializer_class = WordSerializer
 
+def java_string_hashcode(val):
+    hval = 0x811c9dc5
+    st = urllib.parse.quote_plus(val)
+    fnv_32_prime = 0x01000193
+    uint32_max = 2 ** 32
+    if not isinstance(st, bytes):
+        st = st.encode("UTF-8", "ignore")
+    for s in st:
+        hval = hval ^ s
+        hval = (hval * fnv_32_prime) % uint32_max
+    return hex(hval)[2:].zfill(8)
+
 class GenCross(APIView):
+
+
     def get(self, request, format=None):
-        rawCrossData = Word.rnd.grid(silent=True)
+        rawCrossData = Word.rnd.grid(
+            silent=True,
+            size=self.request.query_params.get('size', 10)
+        )
         crossData = []
+        pk = [data[5] for data in rawCrossData]
+        answer = []
+        words= {}
+        descriptions = {}
+
+        for obj in Word.objects.filter(pk__in=pk):
+            descriptions[obj.id] = obj.description
+            answer.append([obj.word, obj.id])
+            words[obj.id] = obj.word
+
         for data in rawCrossData:
             [word, chrNo, xChr, yChr, direction, pk] = data
             [x, y] = Word.rnd.getWordStart(
@@ -40,7 +73,14 @@ class GenCross(APIView):
                 'word': len(word),
                 'x': x,
                 'y': y,
-                'direction': direction == '-' and 'x' or 'y'
+                'direction': direction == '-' and 'x' or 'y',
+                'description': descriptions.get(pk, ''),
+                'answer': words.get(pk, ''),
             })
-        serializer = CrossSerializer(crossData, many=True)
+        ansList = sorted(answer, key=lambda e: e[1])
+        ansList = '-'.join(map(lambda e: e[0], ansList))
+        serializer = RespSerializer({
+            'answer': java_string_hashcode(ansList),
+            'words': crossData
+        })
         return Response(serializer.data)
