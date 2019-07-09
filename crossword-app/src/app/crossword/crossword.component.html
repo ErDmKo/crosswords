@@ -7,10 +7,17 @@
                 'focus': cell.focus,
                 'selected': cell.selected
             }"
+            [ngStyle]="{
+                'width.px': size.width,
+                'height.px': size.height
+            }"
             *ngFor="let cell of row">
             <input 
                 *ngIf="cell.words"
                 class="input"
+                [ngStyle]="{
+                    'font-size.px': size.font
+                }"
                 [(ngModel)]="cell.val"
                 [appSetFocus]="cell.focus"
                 (focus)="onFocus(cell)"

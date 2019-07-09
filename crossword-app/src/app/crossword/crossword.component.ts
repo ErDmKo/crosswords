@@ -1,12 +1,14 @@
 import {
     Component,
-    OnInit
+    OnInit,
+    HostListener
 } from '@angular/core';
 import {
     CrosswordService,
     Word,
     Direction
 } from '../crossword.service';
+
 import { debounceTime } from 'rxjs/operators';
 import { range, Subject } from 'rxjs';
 
@@ -23,6 +25,11 @@ interface GirdWord {
     dir: Direction
 }
 
+interface Size {
+    width: number,
+    height: number,
+    font: number
+}
 
 @Component({
   selector: 'app-crossword',
@@ -41,11 +48,20 @@ export class CrosswordComponent implements OnInit {
         len: 0,
         valid: false
     }
+    private len = {
+        x: 0,
+        y: 0
+    }
+    private size: Size = {
+        width: 0,
+        height: 0,
+        font: 0
+    }
     private selectedWord: GirdWord = null;
     private words: {
         [pk: string]: GirdWord;
     } = {}
-    private focusEvents: Subject<Cell>
+    private resizeEvents: Subject<null>
 
     constructor(
         private crosswordService: CrosswordService,
@@ -54,6 +70,25 @@ export class CrosswordComponent implements OnInit {
     ngOnInit() {
         this.grid = [];
         this.getWords();
+        this.resizeEvents = new Subject();
+        this.resizeEvents
+            .pipe(debounceTime(100))
+            .subscribe(this.setSize.bind(this));
+    }
+
+    @HostListener('window:resize', ['$event'])
+    onResize(event) {
+          this.resizeEvents.next();
+    }
+    setSize() {
+        const hSize = (window.innerWidth - 10) / this.len.x;
+        const vSize = (window.innerHeight - 10) / this.len.y;
+        const size = Math.min(hSize, vSize);
+        this.size = {
+            width: size,
+            height: size,
+            font: size - 5
+        };
     }
 
     girdGen(words: Word[]) {
@@ -67,10 +102,6 @@ export class CrosswordComponent implements OnInit {
                 min: Infinity
             }
         }
-        const len = {
-            x: 0,
-            y: 0
-        };
 
         const activeCells: {
             [key: string]: Word[]
@@ -126,13 +157,13 @@ export class CrosswordComponent implements OnInit {
                 if (info.min > val) {
                     info.min = val;
                 }
-                len[asix] = info.max - info.min;
+                this.len[asix] = info.max - info.min;
             })
         });
         this.margin = [info.x.min, info.y.min];
-        for (let i=0; i < len.y; i++) {
+        for (let i=0; i < this.len.y; i++) {
             this.grid[i] = [];
-            for (let j=0; j < len.x; j++) {
+            for (let j=0; j < this.len.x; j++) {
                 const coord = {
                     x: info.x.min + j,
                     y: info.y.min + i,
@@ -147,6 +178,7 @@ export class CrosswordComponent implements OnInit {
                 })
             }
         }
+        this.resizeEvents.next();
     }
 
     _getIndex(indexInfo) {
@@ -162,12 +194,12 @@ export class CrosswordComponent implements OnInit {
         const [mX, mY] = this.margin;
         let startWord = cell.words[0];
         if (cell.selected && cell.words.length > 1 && this.selectedWord) {
-            startWord = cell.words.filter(w => w.direction != this.selectedWord.dir)[0];
+            startWord = cell.words.find(w => w.direction != this.selectedWord.dir);
         }
         const startCell = this.grid[startWord.y - mY][startWord.x - mX];
-        const word = startCell.words.filter(word => {
+        const word = startCell.words.find(word => {
             return word.direction == startWord.direction;
-        })[0];
+        });
 
         if (this.selectedWord
             && this.selectedWord.word == startWord
