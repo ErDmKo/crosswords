@@ -1,0 +1,21 @@
+<h1 class="header">Кроссворд</h1>
+<ul class="menu">
+    <li class="menu__item">
+        <a class="menu__ancor" href='/game/'>Новая игра</a>
+    </li>
+    <li 
+        class="menu__item"
+        *ngFor="let game of games">
+        <span class="menu__name">{{ game }}</span>
+        <a 
+            class="menu__ancor"
+            href='/game/{{ game }}'>
+            Возобновить игру
+        </a>
+        <a 
+            class="menu__ancor"
+            (click)="delGame(game)">
+            Удалить
+        </a>
+    </li>
+</ul>

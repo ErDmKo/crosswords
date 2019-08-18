@@ -8,18 +8,23 @@ import { SetFocusDirective } from './set-focus.directive';
 import {
     FormsModule
 } from '@angular/forms';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
+import { MainMenuComponent } from './main-menu/main-menu.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     CrosswordComponent,
-    SetFocusDirective
+    SetFocusDirective,
+    MainMenuComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,
-    FormsModule
+    FormsModule,
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [],
   bootstrap: [AppComponent]

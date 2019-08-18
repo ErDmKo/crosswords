@@ -1,0 +1,35 @@
+.header {
+    text-align: center;
+    margin: 40px;
+}
+.menu {
+    margin: 20px 0 0 0;
+    list-style: none;
+    padding: 0px;
+}
+.menu__item {
+    text-align: center;
+    margin: 5px auto;
+    border: 1px solid black;
+    max-width: 300px;
+}
+.menu__name {
+    opacity: .7;
+    display: inline-block;
+    padding: 5px;
+}
+.menu__del, .menu__ancor {
+    width: 100%;
+    box-sizing: border-box;
+    text-decoration: none;
+    display: inline-block;
+    padding: 10px 10px;
+}
+.menu__del, .menu__ancor {
+    color: #000;
+    opacity: .8;
+}
+.menu__ancor:hover {
+    opacity: 1;
+    cursor: pointer;
+}

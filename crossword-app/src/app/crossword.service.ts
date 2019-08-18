@@ -14,8 +14,9 @@ export interface Word {
 }
 
 export interface Resp {
-    answer: string,
-    words: Word[]
+    answer?: string,
+    error?: string,
+    words?: Word[]
 }
 
 @Injectable({

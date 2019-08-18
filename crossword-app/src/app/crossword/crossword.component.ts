@@ -3,14 +3,30 @@ import {
     OnInit,
     HostListener
 } from '@angular/core';
+
+import {
+    LocalStorageService
+} from '../local-storage.service';
+
 import {
     CrosswordService,
     Word,
-    Direction
+    Direction,
+    Resp
 } from '../crossword.service';
 
-import { debounceTime } from 'rxjs/operators';
-import { range, Subject } from 'rxjs';
+import { 
+    debounceTime,
+    catchError,
+} from 'rxjs/operators';
+import { 
+    range,
+    Subject,
+    of,
+    Observable
+} from 'rxjs';
+
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface Cell {
     words: Word[],
@@ -19,7 +35,7 @@ interface Cell {
     focus?: boolean,
     val?: string,
 }
-interface GirdWord {
+export interface GirdWord {
     cells: Cell[],
     word: Word,
     dir: Direction
@@ -37,9 +53,9 @@ interface Size {
   styleUrls: ['./crossword.component.css']
 })
 export class CrosswordComponent implements OnInit {
-    private grid: Cell[][]
-    private margin = [0, 0]
-    private answer: {
+    grid: Cell[][];
+    selectedWord: GirdWord = null;
+    answer: {
         hash: string,
         len: number,
         valid: boolean
@@ -48,6 +64,10 @@ export class CrosswordComponent implements OnInit {
         len: 0,
         valid: false
     }
+    error: string
+    load: boolean = false
+
+    private margin = [0, 0]
     private len = {
         x: 0,
         y: 0
@@ -57,32 +77,47 @@ export class CrosswordComponent implements OnInit {
         height: 0,
         font: 0
     }
-    private selectedWord: GirdWord = null;
     private words: {
         [pk: string]: GirdWord;
     } = {}
     private resizeEvents: Subject<null>
+    private saveEvents: Subject<null>
 
     constructor(
+        private route: ActivatedRoute,
         private crosswordService: CrosswordService,
+        private router: Router,
+        private localStorageService: LocalStorageService,
     ) { }
 
     ngOnInit() {
+        this.load = true;
         this.grid = [];
-        this.getWords();
         this.resizeEvents = new Subject();
+        this.saveEvents = new Subject();
+        this.saveEvents
+            .pipe(debounceTime(1000))
+            .subscribe(this.updateLsSate.bind(this));
         this.resizeEvents
             .pipe(debounceTime(100))
             .subscribe(this.setSize.bind(this));
+        const urlId = this.route.snapshot.paramMap.get('id');
+        const gameInfo: GirdWord[] = this.localStorageService.getVal(urlId);
+        if (gameInfo) {
+            this.initCross(urlId, gameInfo);
+            this.load = false;
+        } else {
+            this.getWords();
+        }
     }
 
     @HostListener('window:resize', ['$event'])
-    onResize(event) {
+    onResize() {
           this.resizeEvents.next();
     }
     setSize() {
-        const hSize = (window.innerWidth - 10) / this.len.x;
-        const vSize = (window.innerHeight - 10) / this.len.y;
+        const hSize = (window.innerWidth - 10) / (this.len.x || 10);
+        const vSize = (window.innerHeight - 10) / (this.len.y || 10);
         const size = Math.min(hSize, vSize);
         this.size = {
             width: size,
@@ -91,8 +126,8 @@ export class CrosswordComponent implements OnInit {
         };
     }
 
-    girdGen(words: Word[]) {
-        const info = {
+    girdGen(words: GirdWord[]) {
+        const girdInfo = {
             x: {
                 max: 0,
                 min: Infinity
@@ -103,23 +138,19 @@ export class CrosswordComponent implements OnInit {
             }
         }
 
-        const activeCells: {
-            [key: string]: Word[]
-        } = {};
-
-        const firstCells: {
-            [key: string]: {
-                x?: number,
-                y?: number
-            }
-        } = {
+        const activeCells: Record<string, Word[]> = {};
+        const cellValues: Record<string, string> = {};
+        const firstCells: Record<string, {
+            x?: number,
+            y?: number
+        }> = {
             sum: {
                 x: 0,
                 y: 0
             }
         }
-
-        words.forEach((wordInfo, i) => {
+        words.forEach((girdWordInfo, i) => {
+            const { word: wordInfo } = girdWordInfo;
             const cellKey = `${wordInfo.x}:${wordInfo.y}`;
             const sum = firstCells.sum[wordInfo.direction] += 1;
             if (!firstCells[cellKey]) {
@@ -127,14 +158,16 @@ export class CrosswordComponent implements OnInit {
             }
             const cellVal = firstCells[cellKey];
             cellVal[wordInfo.direction] = sum;
-            Object.entries(info).forEach(([asix, info]) => {
-                const val = wordInfo[asix];
-                const opositAsix = asix == 'x' ? 'y' : 'x';
-                let maxVal = val;
+            Object.entries(girdInfo).forEach(([asix, info]) => {
+                const minVal = wordInfo[asix];
+                let maxVal = minVal;
                 if (asix == wordInfo.direction) {
-                    maxVal += wordInfo.word;
-                    range(val, wordInfo.word)
+                    maxVal = minVal + wordInfo.word;
+                    const opositAsix = asix == 'x' ? 'y' : 'x';
+                    const { cells = [] } = girdWordInfo;
+                    range(minVal, wordInfo.word)
                         .subscribe((val) => {
+                            const cell = cells[val - minVal];
                             const key =[
                                 wordInfo[opositAsix],
                                 val,
@@ -143,6 +176,9 @@ export class CrosswordComponent implements OnInit {
                                 key.reverse();
                             }
                             const strKey = key.join(':');
+                            if (cell) {
+                                cellValues[strKey] = cell.val;
+                            }
                             let info = activeCells[strKey];
                             if (!info) {
                                 info = []
@@ -154,19 +190,20 @@ export class CrosswordComponent implements OnInit {
                 if (info.max < maxVal) {
                     info.max = maxVal;
                 }
-                if (info.min > val) {
-                    info.min = val;
+                if (info.min > minVal) {
+                    info.min = minVal;
                 }
                 this.len[asix] = info.max - info.min;
-            })
+            });
         });
-        this.margin = [info.x.min, info.y.min];
+        this.localStorageService.setGame(this.answer.hash, words);
+        this.margin = [girdInfo.x.min, girdInfo.y.min];
         for (let i=0; i < this.len.y; i++) {
             this.grid[i] = [];
             for (let j=0; j < this.len.x; j++) {
                 const coord = {
-                    x: info.x.min + j,
-                    y: info.y.min + i,
+                    x: girdInfo.x.min + j,
+                    y: girdInfo.y.min + i,
                 };
                 const key = `${coord.x}:${coord.y}`;
                 this.grid[i].push({
@@ -174,7 +211,7 @@ export class CrosswordComponent implements OnInit {
                     index: this._getIndex(firstCells[key]),
                     selected: false,
                     focus: false,
-                    val: ''
+                    val: cellValues[key] || ''
                 })
             }
         }
@@ -256,6 +293,19 @@ export class CrosswordComponent implements OnInit {
             nextCell.focus = true;
         }
     }
+    updateLsSate() {
+        const lastState: GirdWord[] = this.localStorageService.getVal(
+            this.answer.hash
+        );
+        const newState = lastState.map((girdWord: GirdWord): GirdWord => {
+            const word = this.words[girdWord.word.pk];
+            if (word) {
+                return word;
+            }
+            return girdWord;
+        });
+        this.localStorageService.setGame(this.answer.hash, newState);
+    }
     onInput(e: KeyboardEvent, cell: Cell): void {
         if (!cell.val) {
             return;
@@ -271,6 +321,7 @@ export class CrosswordComponent implements OnInit {
                 .slice(0, 1)
                 .join('');
             this.validate()
+            this.saveEvents.next();
         }, 1);
         cell.focus = false;
         const nextCell = this.selectedWord.cells[
@@ -296,15 +347,37 @@ export class CrosswordComponent implements OnInit {
             Object.keys(this.words).length == this.answer.len
             && this.answer.hash == hash;
     }
+    initCross(answer: string, words: GirdWord[]): void {
+        this.answer = Object.assign(this.answer, {
+            hash: answer,
+            len: words.length
+        });
+        this.girdGen(words);
+    }
     getWords(): void {
         this.crosswordService
             .genCrossword(10)
-            .subscribe((resp) => {
-                this.girdGen(resp.words);
-                this.answer = Object.assign(this.answer, {
-                    hash: resp.answer,
-                    len: resp.words.length
-                });
+            .pipe(
+                catchError((e): Observable<Resp> => {
+                    return of({
+                        error: e.name
+                    });
+                })
+            )
+            .subscribe((resp: Resp) => {
+                this.load = false;
+                if (resp.error == "HttpErrorResponse") {
+                    this.error = 'Backend unavailable';
+                    this.resizeEvents.next();
+                    return;
+                } 
+                const girdWords: GirdWord[] = resp.words.map((e: Word): GirdWord  => ({
+                   cells: [],
+                   word: e,
+                   dir: e.direction
+                }));
+                this.initCross(resp.answer, girdWords);
+                this.router.navigate([`/game/${resp.answer}`]);
             });
     }
 
