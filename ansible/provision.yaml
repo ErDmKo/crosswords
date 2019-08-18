@@ -1,0 +1,42 @@
+---
+- hosts: web
+  vars:
+    db_name: 'crosswords'
+    db_user: 'crosswordsuser'
+    db_pass: 'crosswords'
+    install_dir: '/opt/crosswordAns'
+  remote_user: root
+  tasks:
+  - name: ensure nginx is at the latest version
+    package:
+      name: nginx
+      state: latest
+  - name: Install PostgreSQL
+    package: 
+      name: '{{ item }}'
+      state: latest
+    with_items:
+      - postgresql
+      - postgresql-contrib
+      - python3-venv
+      - python-dev
+      - python3-dev
+      - libpq-dev
+      - build-essential
+  - name: Create db PostgreSQL
+    become_user: postgres
+    become: true 
+    postgresql_db:
+      name: db_name 
+  - name: Create user PostgreSQL
+    become_user: postgres
+    become: true 
+    postgresql_user:
+      db: db_name
+      name: db_user
+      password: db_pass
+  - name: Install Pip
+    pip:
+      virtualenv: '{{ install_dir }}/.env'
+      requirements: '{{ install_dir }}/requriments.txt'
+      virtualenv_command: /usr/bin/python3 -m venv

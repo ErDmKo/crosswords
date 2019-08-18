@@ -23,7 +23,7 @@ export interface Resp {
   providedIn: 'root'
 })
 export class CrosswordService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = '/api';
 
   constructor(
       private http: HttpClient,

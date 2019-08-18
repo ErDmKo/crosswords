@@ -1,0 +1,26 @@
+---
+- hosts: web
+  vars:
+    install_dirr: '/opt/crosswordAns'
+    max_clients: 200
+  remote_user: root
+  environment:
+    PATH: '/root/.nvm/versions/node/v12.8.1/bin/:{{ ansible_env.PATH }}'
+    NODE_OPTIONS: '--max_old_space_size=8192'
+  tasks:
+  - name: git clone
+    git:
+      repo: 'https://github.com/ErDmKo/crosswords.git'
+      dest: install_dirr
+  - name: npm install pm2
+    npm:
+      name: pm2
+      global: yes
+  - name: npm install
+    npm:
+      ci: true
+      path: '{{ install_dirr }}/crossword-app'
+  - name: npm build
+    command: npm run build
+    args:
+      chdir: '{{ install_dirr }}/crossword-app'
