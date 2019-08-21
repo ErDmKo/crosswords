@@ -4,3 +4,11 @@ html, body {
     padding: 0;
     font-family: 'Roboto', sans-serif;
 }
+input {
+    padding: 0px;
+    border: 0px;
+    margin: 0px;
+    border-radius: 0;
+    -webkit-appearance: none;
+    -webkit-border-radius:0px;
+}
