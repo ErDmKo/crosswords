@@ -72,7 +72,7 @@ export class CrosswordComponent implements OnInit {
         x: 0,
         y: 0
     }
-    private size: Size = {
+    public size: Size = {
         width: 0,
         height: 0,
         font: 0
