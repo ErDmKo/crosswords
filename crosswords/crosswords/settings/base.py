@@ -25,7 +25,7 @@ SECRET_KEY = 'mo&a9jdjg6h41*mp*gv+3c7r&a6!t#!6q+gzqem43x!2id^_vs'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['crossword.erdmko.de']
 
 
 # Application definition
@@ -85,6 +85,7 @@ WSGI_APPLICATION = 'crosswords.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
+        'HOST': 'localhost',
         'NAME': 'crosswords',
         'USER': 'crosswordsuser',
         'PASSWORD': 'crosswords'
