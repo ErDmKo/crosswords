@@ -118,7 +118,7 @@ export class CrosswordComponent implements OnInit {
     setSize() {
         const hSize = (window.innerWidth - 10) / (this.len.x || 10);
         const vSize = (window.innerHeight - 10) / (this.len.y || 10);
-        const size = Math.min(hSize, vSize);
+        const size = hSize;
         this.size = {
             width: size,
             height: size,

@@ -12,6 +12,9 @@
     git:
       repo: 'https://github.com/ErDmKo/crosswords.git'
       dest: install_dirr
+      force: yes
+      update: yes
+      version: 'master'
   - name: npm install pm2
     npm:
       name: pm2
