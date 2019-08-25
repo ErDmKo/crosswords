@@ -15,6 +15,7 @@
     font-size: 0;
 }
 .input {
+    text-transform: uppercase;
     position: absolute;
     top: 0;
     left: 0;
@@ -32,7 +33,8 @@
     background-color: #fcc;
 }
 .cell.selected {
-    border-color: blue;
+    border-color: #0A0;
+    opacity: 1;
 }
 .cell.active {
     background: white;
@@ -40,12 +42,14 @@
 .quIndex {
     position: absolute;
     pointer-events: none;
+    z-index: 1;
     font-size: 10px;
     left: 2px;
     top: 2px;
 }
 .cell {
     position: relative;
+    opacity: .9;
     display: inline-block;
     width: 20px;
     height: 20px;
@@ -53,7 +57,44 @@
     border: 1px solid black;
 }
 .desc {
-    padding: 10px;
+    width: 100%;
+    opacity: .95;
+    position: absolute;
+    background: #fff;
+}
+.desc__content {
+    padding: 10px 40px;
+    box-sizing: border-box;
+    overflow-y: scroll;
+}
+.desc__close {
+    position: absolute;
+    border-radius: 50%;
+    top: 10px;
+    right: 15px;
+}
+.desc__prev, .desc__next {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    width: 40px;
+}
+.desc__close:hover,
+.desc__prev .fa:hover, .desc__next .fa:hover {
+    cursor: pointer;
+}
+.desc__prev .fa, .desc__next .fa {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.desc__next {
+    right: 0;
+    text-align: right;
+}
+.desc__prev {
+    left: 0;
 }
 .back {
     text-decoration: none;

@@ -32,6 +32,10 @@ interface Cell {
     words: Word[],
     index: string,
     selected: boolean,
+    coords: {
+        x: number,
+        y: number
+    },
     focus?: boolean,
     val?: string,
 }
@@ -41,11 +45,6 @@ export interface GirdWord {
     dir: Direction
 }
 
-interface Size {
-    width: number,
-    height: number,
-    font: number
-}
 
 @Component({
   selector: 'app-crossword',
@@ -66,16 +65,19 @@ export class CrosswordComponent implements OnInit {
     }
     error: string
     load: boolean = false
+    private wordList = []
 
     private margin = [0, 0]
     private len = {
         x: 0,
         y: 0
     }
-    public size: Size = {
+    public descTopPos = 0;
+    public size = {
         width: 0,
         height: 0,
-        font: 0
+        font: 0,
+        desc: 0,
     }
     private words: {
         [pk: string]: GirdWord;
@@ -122,8 +124,10 @@ export class CrosswordComponent implements OnInit {
         this.size = {
             width: size,
             height: size,
-            font: size - 5
+            font: size - 5,
+            desc: size * 1.2 * 3
         };
+        this.setDescTopPos();
     }
 
     girdGen(words: GirdWord[]) {
@@ -149,6 +153,7 @@ export class CrosswordComponent implements OnInit {
                 y: 0
             }
         }
+        this.wordList = [];
         words.forEach((girdWordInfo, i) => {
             const { word: wordInfo } = girdWordInfo;
             const cellKey = `${wordInfo.x}:${wordInfo.y}`;
@@ -157,6 +162,7 @@ export class CrosswordComponent implements OnInit {
                 firstCells[cellKey] = {};
             }
             const cellVal = firstCells[cellKey];
+            this.wordList.push(wordInfo);
             cellVal[wordInfo.direction] = sum;
             Object.entries(girdInfo).forEach(([asix, info]) => {
                 const minVal = wordInfo[asix];
@@ -208,8 +214,12 @@ export class CrosswordComponent implements OnInit {
                 const key = `${coord.x}:${coord.y}`;
                 this.grid[i].push({
                     words: activeCells[key],
-                    index: this._getIndex(firstCells[key]),
+                    index: this.getIndex(firstCells[key]),
                     selected: false,
+                    coords: {
+                        x: j,
+                        y: i 
+                    },
                     focus: false,
                     val: cellValues[key] || ''
                 })
@@ -217,8 +227,27 @@ export class CrosswordComponent implements OnInit {
         }
         this.resizeEvents.next();
     }
-
-    _getIndex(indexInfo) {
+    setDescTopPos() {
+        if (!this.selectedWord) {
+            return;
+        }
+        const cells = this.selectedWord.cells;
+        const size = this.size;
+        let topPos = Math.max(
+            0,
+            ((cells[0].coords.y - 1) * size.height)
+                - size.desc
+        );
+        if (topPos === 0) {
+            if (this.selectedWord.dir != 'y') {
+                topPos = (cells[0].coords.y + 2) * size.height;
+            } else {
+                topPos = (cells.slice(-1)[0].coords.y + 2) * size.height;
+            }
+        }
+        this.descTopPos = topPos;
+    }
+    getIndex(indexInfo) {
         if (!indexInfo) {
             return null;
         }
@@ -228,29 +257,21 @@ export class CrosswordComponent implements OnInit {
         return [indexInfo.x, indexInfo.y].filter(Boolean).join('/');
     }
     onClick(cell): void {
-        const [mX, mY] = this.margin;
         let startWord = cell.words[0];
         if (cell.selected && cell.words.length > 1 && this.selectedWord) {
             startWord = cell.words.find(w => w.direction != this.selectedWord.dir);
         }
-        const startCell = this.grid[startWord.y - mY][startWord.x - mX];
-        const word = startCell.words.find(word => {
-            return word.direction == startWord.direction;
-        });
 
         if (this.selectedWord
             && this.selectedWord.word == startWord
         ) {
+            this.selectedWord.cells.forEach(cell => cell.selected = true);
             return;
         }
-        let asix, margin;
-        if (word.direction == 'x') {
-            asix = 'x';
-            margin = mX;
-        } else {
-            asix = 'y';
-            margin = mY;
-        }
+        this.selectWord(startWord);
+    }
+    selectWord(word, focusFirstCell = false) {
+        const [mX, mY] = this.margin;
         if (this.selectedWord) {
             this.selectedWord.cells.forEach(cell => {
                 cell.selected = false;
@@ -258,10 +279,10 @@ export class CrosswordComponent implements OnInit {
         }
         this.selectedWord = {
             cells: [],
-            word: startWord,
+            word,
             dir: word.direction
         }
-        range(word[asix], word.word).subscribe((coord)=> {
+        range(word[word.direction], word.word).subscribe((coord)=> {
             let {x, y} = word;
             if (word.direction == 'x') {
                 x = coord;
@@ -272,7 +293,11 @@ export class CrosswordComponent implements OnInit {
             cell.selected = true;
             this.selectedWord.cells.push(cell);
         });
+        this.setDescTopPos();
         this.words[this.selectedWord.word.pk] = this.selectedWord;
+        if (focusFirstCell) {
+            this.selectedWord.cells[0].focus = true;
+        }
     }
     onFocus(cell: Cell): void {
         cell.focus = true;
@@ -280,8 +305,21 @@ export class CrosswordComponent implements OnInit {
     onBlur(cell: Cell): void {
         cell.focus = false;
     }
+    onNext(dir) {
+        const index = this.wordList.map(word => word.pk).indexOf(this.selectedWord.word.pk);
+        let next = index + dir;
+        const nextWord = this.wordList.slice(next % this.wordList.length)[0];
+        this.selectWord(nextWord, true);
+    }
+    onCloseDesc(): void {
+        this.selectedWord.cells.forEach(cell => {
+            cell.selected = false;
+        });
+        this.selectedWord = null
+    }
     onUp(e: KeyboardEvent, cell) {
-        if (e.key == 'Backspace' && !cell.val) {
+        const isBackspase = e.key == 'Backspace';
+        if (isBackspase && !cell.val) {
             const currentIndex = this.selectedWord.cells.indexOf(cell);
             cell.focus = false;
 
@@ -332,7 +370,10 @@ export class CrosswordComponent implements OnInit {
     validate() {
         const wordList = Object.entries(this.words)
             .reduce((wordList, [pk, wordInfo]) => {
-                const word = wordInfo.cells.map(e => e.val).join('');
+                const word = wordInfo.cells.map(e => e.val)
+                    .join('')
+                    .toLowerCase();
+
                 wordList.push({
                     pk,
                     word

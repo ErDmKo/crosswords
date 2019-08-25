@@ -19,6 +19,11 @@
 <div *ngIf="error">
     <h2 class="error">Произошла ошибка <br/>"<span [innerText]="error"></span>"</h2>
 </div>
+<div 
+    class="victory"
+    *ngIf="answer.valid">
+    Победа
+</div>
 <ul *ngIf="grid.length" class="wrapper">
     <li class="row" *ngFor="let row of grid">
         <div 
@@ -56,21 +61,6 @@
         </div>
     </li>
 </ul>
-<div
-    class="desc"
-    [ngStyle]="{
-        'font-size.px': size.font
-    }"
-    *ngIf="selectedWord">
-    <div
-        [innerText]="selectedWord.word.description">
-    </div>
-</div>
-<div 
-    class="victory"
-    *ngIf="answer.valid">
-    Победа
-</div>
 <a 
     class="back"
     [ngStyle]="{
@@ -79,3 +69,33 @@
     href="/">
     В главное меню
 </a>
+<div
+    class="desc"
+    [ngStyle]="{
+        'font-size.px': size.font,
+        'top.px': descTopPos
+    }"
+    *ngIf="selectedWord">
+    <div
+        (click) = 'onNext(-1)'
+        class="desc__prev">
+        <i class="fa fa-arrow-left"></i>
+    </div>
+    <div
+        (click) = 'onNext(1)'
+        class="desc__next">
+        <i class="fa fa-arrow-right"></i>
+    </div>
+    <div 
+        (click) = 'onCloseDesc()'
+        class="desc__close">
+        <i class="fa fa-times"></i>
+    </div>
+    <div
+        [ngStyle]="{
+            'height.px': size.desc
+        }"
+        class="desc__content"
+        [innerText]="selectedWord.word.description">
+    </div>
+</div>
