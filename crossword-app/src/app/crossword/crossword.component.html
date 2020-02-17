@@ -1,101 +1,112 @@
-<div class="loader" *ngIf="load">
-    <svg width="38" height="38" viewBox="0 0 38 38" stroke="#000">
-        <g fill="none" fill-rule="evenodd">
-        <g transform="translate(1 1)" stroke-width="2">
-        <circle stroke-opacity="0.5" cx="18" cy="18" r="18"/>
-        <path d="M36 18c0-9.94-8.06-18-18-18">
-        <animateTransform 
-              attributeName="transform" 
-              type="rotate" 
-              from="0 18 18" 
-              to="360 18 18" 
-              dur="1s" 
-              repeatCount="indefinite"/>
-        </path>
-        </g>
-        </g>
-    </svg>
-</div>
-<div *ngIf="error">
-    <h2 class="error">Произошла ошибка <br/>"<span [innerText]="error"></span>"</h2>
-</div>
-<div 
-    class="victory"
-    *ngIf="answer.valid">
-    Победа
-</div>
-<ul *ngIf="grid.length" class="wrapper">
-    <li class="row" *ngFor="let row of grid">
-        <div 
-            class="cell"
-            [ngClass]="{
-                'active': cell.words,
-                'focus': cell.focus,
-                'selected': cell.selected
-            }"
-            [ngStyle]="{
-                'width.px': size.width,
-                'height.px': size.height
-            }"
-            *ngFor="let cell of row">
-            <input 
-                *ngIf="cell.words"
-                class="input"
-                [ngStyle]="{
-                    'font-size.px': size.font
-                }"
-                [(ngModel)]="cell.val"
-                [appSetFocus]="cell.focus"
-                (focus)="onFocus(cell)"
-                (blur)="onBlur(cell)"
-                (click)="onClick(cell)"
-                (keyup)="onUp($event, cell)"
-                (input)="onInput($event, cell)"
-                type="text"
-            />
-            <div 
-                class="quIndex"
-                *ngIf="cell.index">
-                <span>{{ cell.index }}</span>
-            </div>
-        </div>
-    </li>
-</ul>
-<a 
-    class="back"
-    [ngStyle]="{
-        'font-size.px': size.font
-    }"
-    href="/">
-    В главное меню
-</a>
 <div
-    class="desc"
-    [ngStyle]="{
-        'font-size.px': size.font,
-        'top.px': descTopPos
+    class="mobile"
+    [ngClass]="{
+        screen: isScreenDevice,
+        win: answer.valid
     }"
-    *ngIf="selectedWord">
-    <div
-        (click) = 'onNext(-1)'
-        class="desc__prev">
-        <i class="fa fa-arrow-left"></i>
+>
+    <div class="loader" *ngIf="load">
+        <svg width="38" height="38" viewBox="0 0 38 38" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+                <g transform="translate(1 1)" stroke-width="2">
+                    <circle stroke-opacity="0.5" cx="18" cy="18" r="18" />
+                    <path d="M36 18c0-9.94-8.06-18-18-18">
+                        <animateTransform
+                            attributeName="transform"
+                            type="rotate"
+                            from="0 18 18"
+                            to="360 18 18"
+                            dur="1s"
+                            repeatCount="indefinite"
+                        />
+                    </path>
+                </g>
+            </g>
+        </svg>
+    </div>
+    <div *ngIf="error">
+        <h2 class="error">
+            Произошла ошибка <br />"<span [innerText]="error"></span>"
+        </h2>
     </div>
     <div
-        (click) = 'onNext(1)'
-        class="desc__next">
-        <i class="fa fa-arrow-right"></i>
-    </div>
-    <div 
-        (click) = 'onCloseDesc()'
-        class="desc__close">
-        <i class="fa fa-times"></i>
-    </div>
-    <div
+        class="victory"
         [ngStyle]="{
-            'height.px': size.desc
+            'font-size.px': size.font
         }"
-        class="desc__content"
-        [innerText]="selectedWord.word.description">
+        *ngIf="answer.valid"
+    >
+        Победа
+    </div>
+    <ul *ngIf="grid.length" class="wrapper">
+        <li class="row" *ngFor="let row of grid">
+            <div
+                class="cell"
+                [ngClass]="{
+                    active: cell.words,
+                    focus: cell.focus,
+                    selected: cell.selected,
+                    valid: isValidCell(cell)
+                }"
+                [ngStyle]="{
+                    'width.px': size.width,
+                    'height.px': size.height
+                }"
+                *ngFor="let cell of row"
+            >
+                <input
+                    *ngIf="cell.words"
+                    class="input"
+                    [ngStyle]="{
+                        'font-size.px': size.font
+                    }"
+                    [(ngModel)]="cell.val"
+                    [appSetFocus]="cell.focus"
+                    (focus)="onFocus(cell)"
+                    (blur)="onBlur(cell)"
+                    (click)="onClick(cell)"
+                    (keyup)="onUp($event, cell)"
+                    (input)="onInput($event, cell)"
+                    type="text"
+                />
+                <div class="quIndex" *ngIf="cell.index">
+                    <span>{{ cell.index }}</span>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <a
+        class="back"
+        [ngStyle]="{
+            'font-size.px': size.font
+        }"
+        href="/"
+    >
+        В главное меню
+    </a>
+    <div
+        class="desc"
+        [ngStyle]="{
+            'font-size.px': size.font,
+            'top.px': descTopPos
+        }"
+        *ngIf="selectedWord"
+    >
+        <div (click)="onNext(-1)" class="desc__prev">
+            <i class="fa fa-arrow-left"></i>
+        </div>
+        <div (click)="onNext(1)" class="desc__next">
+            <i class="fa fa-arrow-right"></i>
+        </div>
+        <div (click)="onCloseDesc()" class="desc__close">
+            <i class="fa fa-times"></i>
+        </div>
+        <div
+            [ngStyle]="{
+                'height.px': size.desc
+            }"
+            class="desc__content"
+            [innerText]="selectedWord.word.description"
+        ></div>
     </div>
 </div>

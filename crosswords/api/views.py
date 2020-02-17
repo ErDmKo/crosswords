@@ -3,7 +3,7 @@ from rest_framework import serializers
 from crosswords.models import Word
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import urllib
+import urllib, datetime
 
 class WordSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,11 +19,15 @@ class CrossSerializer(serializers.Serializer):
     y = serializers.IntegerField()
     direction = serializers.CharField()
     description = serializers.CharField()
+    hashWord = serializers.CharField()
+    fullWord = serializers.CharField()
     # answer = serializers.CharField()
 
 class RespSerializer(serializers.Serializer):
     words = CrossSerializer(many=True, read_only=True)
     answer = serializers.CharField()
+    difficulty = serializers.CharField()
+    genTime = serializers.DateTimeField()
 
 class WordList(viewsets.ReadOnlyModelViewSet):
     queryset = Word.objects.all()
@@ -49,6 +53,7 @@ class GenCross(APIView):
             silent=True,
             size=self.request.query_params.get('size', 10)
         )
+        difficulty = self.request.query_params.get('difficulty', '0')
         crossData = []
         pk = [data[5] for data in rawCrossData]
         answer = []
@@ -68,7 +73,7 @@ class GenCross(APIView):
                 yChr,
                 direction
             )
-            crossData.append({
+            dataToFront = {
                 'pk': pk,
                 'word': len(word),
                 'x': x,
@@ -76,11 +81,18 @@ class GenCross(APIView):
                 'direction': direction == '-' and 'x' or 'y',
                 'description': descriptions.get(pk, ''),
                 'answer': words.get(pk, ''),
-            })
+            }
+
+            dataToFront['fullWord'] = word if difficulty == '0' else None
+            dataToFront['hashWord'] = java_string_hashcode(word) if difficulty == '1' else None
+
+            crossData.append(dataToFront)
         ansList = sorted(answer, key=lambda e: e[1])
         ansList = '-'.join(map(lambda e: e[0], ansList))
         serializer = RespSerializer({
             'answer': java_string_hashcode(ansList),
-            'words': crossData
+            'difficulty': difficulty,
+            'words': crossData,
+            'genTime': datetime.datetime.now()
         })
         return Response(serializer.data)

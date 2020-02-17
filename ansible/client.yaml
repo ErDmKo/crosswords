@@ -15,10 +15,6 @@
       force: yes
       update: yes
       version: 'master'
-  - name: npm install pm2
-    npm:
-      name: pm2
-      global: yes
   - name: npm install
     npm:
       ci: true

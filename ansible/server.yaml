@@ -6,6 +6,9 @@
     db_pass: 'crosswords'
     install_dir: '/opt/crosswordAns'
   remote_user: root
+  environment:
+    PATH: '/root/.nvm/versions/node/v12.8.1/bin/:{{ ansible_env.PATH }}'
+    NODE_OPTIONS: '--max_old_space_size=8192'
   tasks:
   - name: ensure nginx is at the latest version
     package:
@@ -35,8 +38,16 @@
       db: db_name
       name: db_user
       password: db_pass
+  - name: npm install pm2
+    npm:
+      name: pm2
+      global: yes
   - name: Install Pip
     pip:
       virtualenv: '{{ install_dir }}/.env'
       requirements: '{{ install_dir }}/requriments.txt'
       virtualenv_command: /usr/bin/python3 -m venv
+  - name: start demon
+    command: pm2 start
+    args:
+      chdir: install_dirr

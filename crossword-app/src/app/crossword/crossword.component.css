@@ -1,3 +1,15 @@
+.mobile {
+    position: relative;
+}
+.victory {
+    position: absolute;
+    z-index: 1;
+    color: #fff;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 0px 0px 5px #000;
+}
 .loader {
     position: absolute;
     top: 50%;
@@ -24,6 +36,7 @@
     text-align: center;
     box-sizing: border-box;
     width: 100%;
+    background-color: transparent;
 }
 .row {
     background: black;
@@ -38,6 +51,9 @@
 }
 .cell.active {
     background: white;
+}
+.cell.valid {
+    background-color: #cfc;
 }
 .quIndex {
     position: absolute;
@@ -61,6 +77,14 @@
     opacity: .95;
     position: absolute;
     background: #fff;
+    box-sizing: border-box;
+    border: 2px solid #000;
+}
+.win .desc {
+    display: none;
+}
+.win .wrapper {
+    opacity: 0.3;
 }
 .desc__content {
     padding: 10px 40px;
