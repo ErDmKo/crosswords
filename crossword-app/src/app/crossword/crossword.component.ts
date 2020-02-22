@@ -104,7 +104,7 @@ export class CrosswordComponent implements OnInit {
     setSize() {
         const hSize = (window.innerWidth - 10) / (this.len.x || 10);
         const vSize = (window.innerHeight - 10) / (this.len.y || 10);
-        const size = Math.max(16, Math.min(hSize, 30));
+        const size = Math.max(21, Math.min(hSize, 30));
         this.size = {
             width: size,
             height: size,
@@ -412,7 +412,7 @@ export class CrosswordComponent implements OnInit {
     }
     getWords(difficulty): void {
         this.crosswordService
-            .genCrossword(5, difficulty)
+            .genCrossword(10, difficulty)
             .pipe(
                 catchError(
                     (e): Observable<Resp> => {

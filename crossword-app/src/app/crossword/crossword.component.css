@@ -21,6 +21,7 @@
     text-align: center;
 }
 .wrapper {
+    overflow: scroll;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -39,8 +40,11 @@
     background-color: transparent;
 }
 .row {
+    white-space: nowrap;
     background: black;
     text-align: center;
+    display: inline-block;
+    min-width: 100%;
 }
 .focus .input {
     background-color: #fcc;
