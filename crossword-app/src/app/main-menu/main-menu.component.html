@@ -14,7 +14,16 @@
         </a>
     </li>
     <li class="menu__item" *ngFor="let game of games">
-        <span class="menu__name">{{ game }}</span>
+        <span class="menu__name"
+            >{{
+                difLabels[localStorageService.getGameMeta(game).difficulty][1]
+            }}
+            сложность</span
+        >
+        <span class="menu__name">{{
+            localStorageService.getGameMeta(game).lastUpdate
+                | date: 'dd-MM-yy h:mm'
+        }}</span>
         <a class="menu__ancor" href="/game/{{ game }}">
             Возобновить игру
         </a>

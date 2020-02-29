@@ -8,6 +8,7 @@ import { debounceTime, catchError } from 'rxjs/operators';
 import { range, Subject, of, Observable } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
+import { Difficulty } from '../main-menu/main-menu.component';
 
 interface Cell {
     words: Word[];
@@ -67,6 +68,7 @@ export class CrosswordComponent implements OnInit {
     } = {};
     private resizeEvents: Subject<null>;
     private saveEvents: Subject<null>;
+    private difficulty: Difficulty;
 
     constructor(
         private route: ActivatedRoute,
@@ -88,9 +90,11 @@ export class CrosswordComponent implements OnInit {
             .subscribe(this.setSize.bind(this));
         const urlId = this.route.snapshot.paramMap.get('id');
         const difficulty = this.route.snapshot.queryParamMap.get('dificulty');
-        const gameInfo: GirdWord[] = this.localStorageService.getVal(urlId);
+        const gameInfo = this.localStorageService.getGame(urlId);
+        this.difficulty = difficulty as Difficulty;
         if (gameInfo) {
-            this.initCross(urlId, gameInfo);
+            this.initCross(urlId, gameInfo.words);
+            this.difficulty = gameInfo.difficulty;
             this.load = false;
         } else {
             this.getWords(difficulty);
@@ -103,7 +107,6 @@ export class CrosswordComponent implements OnInit {
     }
     setSize() {
         const hSize = (window.innerWidth - 10) / (this.len.x || 10);
-        const vSize = (window.innerHeight - 10) / (this.len.y || 10);
         const size = Math.max(21, Math.min(hSize, 30));
         this.size = {
             width: size,
@@ -192,7 +195,11 @@ export class CrosswordComponent implements OnInit {
                 this.len[asix] = info.max - info.min;
             });
         });
-        this.localStorageService.setGame(this.answer.hash, words);
+        this.localStorageService.setGame(
+            this.answer.hash,
+            words,
+            this.difficulty
+        );
         this.margin = [girdInfo.x.min, girdInfo.y.min];
         for (let i = 0; i < this.len.y; i++) {
             this.grid[i] = [];
@@ -358,7 +365,11 @@ export class CrosswordComponent implements OnInit {
                 return girdWord;
             }
         );
-        this.localStorageService.setGame(this.answer.hash, newState);
+        this.localStorageService.setGame(
+            this.answer.hash,
+            newState,
+            this.difficulty
+        );
     }
     onInput(e: KeyboardEvent, cell: Cell): void {
         if (!cell.val) {
