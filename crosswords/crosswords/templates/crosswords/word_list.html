@@ -1,3 +1,6 @@
+{% extends 'crosswords/base.html' %}
+{% block title %}Word on letter {{ letter }}{% endblock %}
+{% block body %}
 <h1>Words on letter "{{ letter }}"</h1>
 <ul>
     {% for info in object_list %}
@@ -23,3 +26,4 @@
     {% endif %} 
     </span>
 </div>
+{% endblock %}

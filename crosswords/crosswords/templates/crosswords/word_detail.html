@@ -1,2 +1,6 @@
+{% extends 'crosswords/base.html' %}
+{% block title %}Info about {{ object.word }}{% endblock %}
+{% block body %}
 <h1>{{ object.word }}</h1>
 <p>{{ object.description }}</p>
+{% endblock %}

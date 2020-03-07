@@ -1,8 +1,62 @@
 from django.db import models
+import pywikibot, re
+from pywikibot import pagegenerators
+from pymystem3 import Mystem
 import re
 from random import choice
 
+wikiApi = pywikibot.Site()
+m = Mystem()
+
 class RandomManager(models.Manager):
+
+    def wikiRnd(self, list_size=10):
+        pages = pagegenerators.RandomPageGenerator(5000, wikiApi, '')
+        obj_list = []
+        for page in pages:
+            title = page.title()
+            if re.search(r'[\s\-]', title):
+                continue
+            try:
+                result = m.analyze(title)
+            except Exception:
+                continue
+            if not len(result):
+                continue
+            if not result[0].get('analysis'):
+                continue
+            if not len(result[0]['analysis']):
+                continue
+            lex = result[0]['analysis'][0]
+            gr = lex['gr']
+            grInfo = gr.split(',')
+            if grInfo[0] !='S':
+                continue
+            if re.search(r'фам|имя|отч|гео', gr):
+                continue
+            categories = ', '.join([c.title() for c in page.categories()])
+            if re.search(r'Населённые\sпункты', categories):
+                continue
+            try:
+                item = pywikibot.ItemPage.fromPage(page)
+            except Exception:
+                continue
+            info = item.get()
+            if not info['descriptions'].get('ru'):
+                continue
+            desc = info['descriptions'].get('ru')
+            if len(desc.split(' ')) <=3:
+                continue
+            if re.search(r'Викимедиа|страница', info['descriptions']['ru']):
+                continue
+            obj_list.append({
+                'word': lex['lex'],
+                'desc': info['descriptions']['ru']
+            })
+            print(lex, info['labels']['ru'])
+            if len(obj_list) >= list_size:
+                return obj_list
+        return obj_list
 
     def random(self, limit = 1):
         count = self.count()
@@ -158,10 +212,22 @@ class RandomManager(models.Manager):
             i += 1
         return insertedList
 
-    def grid(self, silent=False, size=10):
+    def grid(self, silent=False, size=10, fromWiki=False):
         self.field = [[]]
-        words = [(word.word, word.id) \
-                for word in self.random(size)]
+        if fromWiki:
+            wordInfo = self.wikiRnd(int(size));
+            words = []
+            for word in wordInfo:
+                dbWord = Word(
+                        word=word['word'],
+                        description=word['desc'],
+                        multivalued=1
+                        )
+                dbWord.save()
+                words.append((dbWord.word, dbWord.id))
+        else:
+            words = [(word.word, word.id) \
+                    for word in self.random(size)]
         # words = [('Дима', 1), ('Инея', 2)]
         self.setItem(100, 100, '  ')
         out = self.wordsToField(words, 30, 30)
@@ -174,6 +240,10 @@ class RandomManager(models.Manager):
         return out
 
 class Word(models.Model):
+    SOURCE_CHOICES = (
+        ('O', 'Ozigov'),
+        ('W', 'Wiki'),
+    )
     word = models.TextField(
         verbose_name='Word'
     )
@@ -182,7 +252,8 @@ class Word(models.Model):
     )
     multivalued = models.PositiveSmallIntegerField(
         verbose_name='Multivalued'
-    ) 
+    )
+    source = models.CharField(max_length=1, default=SOURCE_CHOICES[0][0], choices=SOURCE_CHOICES)
 
     objects = models.Manager()
     rnd = RandomManager()

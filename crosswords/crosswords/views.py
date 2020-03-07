@@ -1,6 +1,15 @@
 from django.views import generic
 from .models import Word
 
+
+class WikiApi(generic.TemplateView):
+    template_name = 'crosswords/wiki_info.html'
+
+    def get_context_data(self, **kw):
+        context = super().get_context_data(**kw)
+        context['object_list'] = Word.rnd.wikiRnd(20)
+        return context
+
 class LetterIndex(generic.TemplateView):
     template_name = 'crosswords/word_letter.html'
     start_letter = 'а'

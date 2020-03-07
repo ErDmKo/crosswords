@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+    </head>
+    <body>
+        <header><a href="{% url 'word-letter' %}">Words list</a></header>
+        {% block body %}{% endblock %}
+    </body>
+</html>

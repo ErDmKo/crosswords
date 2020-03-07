@@ -1,4 +1,8 @@
+{% extends 'crosswords/base.html' %}
+{% block title %}List of letters{% endblock %}
+{% block body %}
 <h1>Letters</h1>
+<a href='{% url 'wiki-words' %}'>Wiki words</a>
 <ul>
     {% for info in obj_list %}
         <li>
@@ -8,3 +12,4 @@
         <li>No articles yet.</li> 
     {% endfor %}
 </ul>
+{% endblock %}

@@ -51,7 +51,7 @@ class GenCross(APIView):
     def get(self, request, format=None):
         rawCrossData = Word.rnd.grid(
             silent=True,
-            size=self.request.query_params.get('size', 10)
+            size=self.request.query_params.get('size', 10),
         )
         difficulty = self.request.query_params.get('difficulty', '0')
         crossData = []

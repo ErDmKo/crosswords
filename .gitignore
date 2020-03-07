@@ -1,7 +1,10 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+throttle.ctrl
 *$py.class
+apicache-py3
+pywikibot.lwp
 
 # C extensions
 *.so

@@ -93,8 +93,8 @@ export class CrosswordComponent implements OnInit {
         const gameInfo = this.localStorageService.getGame(urlId);
         this.difficulty = difficulty as Difficulty;
         if (gameInfo) {
-            this.initCross(urlId, gameInfo.words);
             this.difficulty = gameInfo.difficulty;
+            this.initCross(urlId, gameInfo.words);
             this.load = false;
         } else {
             this.getWords(difficulty);

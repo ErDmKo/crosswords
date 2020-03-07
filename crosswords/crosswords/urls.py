@@ -16,10 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls import url
-from .views import IndexView, DetailView, LetterIndex
+from .views import IndexView, DetailView, LetterIndex, WikiApi
 
 urlpatterns = [
     path('', LetterIndex.as_view(), name='word-letter'),
+    path('wiki', WikiApi.as_view(), name='wiki-words'),
     path('list/<int:chr>', IndexView.as_view(), name='word-list'),
     path('<int:pk>', 
         DetailView.as_view(), 

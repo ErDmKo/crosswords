@@ -1,0 +1,14 @@
+{% extends 'crosswords/base.html' %}
+{% block title %}Wiki random pages{% endblock %}
+{% block body %}
+<h1>Wiki {{ object }}</h1>
+<ul>
+{% for info in object_list %}
+    <li>
+        <div>{{ info.word }} - {{ info.desc }}</div>
+    </li>
+    {% empty %}
+    <li>No words yet.</li> 
+    {% endfor %}
+</ul>
+{% endblock %}
