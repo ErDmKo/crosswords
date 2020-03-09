@@ -7,7 +7,7 @@ class WikiApi(generic.TemplateView):
 
     def get_context_data(self, **kw):
         context = super().get_context_data(**kw)
-        context['object_list'] = Word.rnd.wikiRnd(20)
+        context['object_list'] = [] # Word.rnd.wikiRnd(20)
         return context
 
 class LetterIndex(generic.TemplateView):

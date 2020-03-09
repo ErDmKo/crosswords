@@ -52,6 +52,7 @@ class GenCross(APIView):
         rawCrossData = Word.rnd.grid(
             silent=True,
             size=self.request.query_params.get('size', 10),
+            fromWiki=True
         )
         difficulty = self.request.query_params.get('difficulty', '0')
         crossData = []

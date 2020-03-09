@@ -7,6 +7,8 @@ from random import choice
 
 wikiApi = pywikibot.Site()
 m = Mystem()
+WIKI = 'W'
+OZI = 'O'
 
 class RandomManager(models.Manager):
 
@@ -57,11 +59,14 @@ class RandomManager(models.Manager):
                 return obj_list
         return obj_list
 
-    def random(self, limit = 1):
+    def random(self, limit = 1, source=OZI):
+        return self.filter(source=source).order_by('?')[:int(limit)]
+        '''
         count = self.count()
         return self.raw("""
             select * from {} TABLESAMPLE BERNOULLI ((%s * 100) / %s::decimal)
         """.format(self.model._meta.db_table), [limit, count])
+        '''
 
     def _getEnds(self, x, y, lenWord, direction):
         if direction == '-':
@@ -214,19 +219,12 @@ class RandomManager(models.Manager):
     def grid(self, silent=False, size=10, fromWiki=False):
         self.field = [[]]
         if fromWiki:
-            wordInfo = self.wikiRnd(int(size));
-            words = []
-            for word in wordInfo:
-                dbWord = Word(
-                        word=word['word'],
-                        description=word['desc'],
-                        multivalued=1
-                        )
-                dbWord.save()
-                words.append((dbWord.word, dbWord.id))
+            words_query = self.random(size, source=WIKI)
         else:
-            words = [(word.word, word.id) \
-                    for word in self.random(size)]
+            words_query = self.random(size, source=OZI)
+
+        words = [(word.word, word.id) \
+                for word in words_query]
         # words = [('Дима', 1), ('Инея', 2)]
         self.setItem(100, 100, '  ')
         out = self.wordsToField(words, 30, 30)
@@ -240,9 +238,10 @@ class RandomManager(models.Manager):
 
 class Word(models.Model):
     SOURCE_CHOICES = (
-        ('O', 'Ozigov'),
-        ('W', 'Wiki'),
+        (OZI, 'Ozigov'),
+        (WIKI, 'Wiki'),
     )
+
     word = models.TextField(
         verbose_name='Word'
     )
@@ -252,7 +251,7 @@ class Word(models.Model):
     multivalued = models.PositiveSmallIntegerField(
         verbose_name='Multivalued'
     )
-    source = models.CharField(max_length=1, default=SOURCE_CHOICES[0][0], choices=SOURCE_CHOICES)
+    source = models.CharField(max_length=1, default=OZI, choices=SOURCE_CHOICES)
 
     objects = models.Manager()
     rnd = RandomManager()
