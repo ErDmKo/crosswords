@@ -53,7 +53,6 @@ class RandomManager(models.Manager):
                 'word': lex['lex'],
                 'desc': info['descriptions']['ru']
             })
-            print(lex, info['labels']['ru'])
             if len(obj_list) >= list_size:
                 return obj_list
         return obj_list
