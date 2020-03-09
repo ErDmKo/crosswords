@@ -25,7 +25,7 @@ SECRET_KEY = 'mo&a9jdjg6h41*mp*gv+3c7r&a6!t#!6q+gzqem43x!2id^_vs'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['crossword.erdmko.de']
+ALLOWED_HOSTS = ['crossword.erdmko.de', 'dictionary.erdmko.de']
 
 
 # Application definition
